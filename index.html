@@ -75,19 +75,61 @@
     @media(max-width:800px){.wrap{width:calc(100% - 40px)}.hero{min-height:650px;min-height:calc(90svh - 80px);padding-top:65px}.nav{height:80px}.intro-copy{padding:35px}.intro{grid-template-columns:1fr 1fr}.sculpture{width:165px;height:165px}.sculpture i{border-width:18px;border-radius:30px}.card{padding:30px}.outro{padding:40px;flex-direction:column;align-items:flex-start;margin-top:65px}}
     @media(max-width:560px){.wrap{width:calc(100% - 32px)}.nav-links{gap:20px;font-size:12px}.brand{font-size:13px}.hero h1{font-size:15.1vw}.hero-note{font-size:13px}.hero-bottom{margin-top:65px;font-size:9px;letter-spacing:.5px}.eyebrow{font-size:10px}.intro{grid-template-columns:1fr}.intro-copy{padding:33px 29px 0}.art{min-height:300px}.sculpture{width:160px;height:160px;margin-left:-20px}.art-label{bottom:20px;font-size:9px}.grid{grid-template-columns:1fr;gap:16px;margin-top:16px}.panel{border-radius:23px}.card{min-height:255px}.card-top{margin-bottom:32px}.outro{padding:34px 29px;gap:30px}.section-top{font-size:9px;letter-spacing:1px}.copy{font-size:15px}footer{font-size:10px;flex-wrap:wrap}.hero-bottom>span{max-width:110px;text-align:right;line-height:1.6}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}.reveal.waiting{opacity:1;transform:none}}
+
+    /* Header alignment and interactive details */
+    .nav-links{align-items:center}
+    .nav-links a{display:inline-flex;align-items:center;gap:5px;line-height:20px;min-height:44px}
+    .nav-links a span{display:inline-block;line-height:1;font-size:12px}
+    .hero{isolation:isolate}
+    .hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(290px circle at var(--mx,50%) var(--my,45%),#a3b59a16,transparent 100%);opacity:0;transition:opacity .6s}
+    .hero:hover::before{opacity:1}
+    .name-play{display:inline-block;background:none;border:0;padding:0;color:inherit;font:inherit;letter-spacing:inherit;line-height:inherit;cursor:pointer;transition:filter .4s}
+    .name-play:hover{filter:drop-shadow(0 0 24px #dce4d81a)}
+    .name-play span{display:inline-block}
+    .name-play.pop span{animation:letter-wave .8s var(--ease) both;animation-delay:calc(var(--i)*45ms)}
+    @keyframes letter-wave{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-.13em) rotate(-4deg);color:#cadbc2}70%{transform:translateY(.025em) rotate(1deg)}}
+    .reveal{transition:opacity 1s var(--ease),transform 1s var(--ease),filter 1s var(--ease),background .4s,border-color .4s}
+    .reveal.waiting{transform:translateY(55px) scale(.97);filter:blur(3px)}
+    .grid .reveal:nth-child(2){transition-delay:.12s}
+    .playground{margin-top:85px;margin-bottom:45px}
+    .play-panel{display:grid;grid-template-columns:1fr 1fr;align-items:center;min-height:430px;background:linear-gradient(125deg,#2d332e,#242724)}
+    .play-copy{padding:55px}
+    .play-copy .button{margin-top:28px;border:1px solid #697762;cursor:pointer;min-height:48px}
+    .orbit-stage{height:390px;display:grid;place-items:center;overflow:hidden;position:relative}
+    .orbit{width:260px;height:260px;position:relative;transition:transform 1.4s var(--ease);transform:rotate(-25deg)}
+    .orbit::after{content:"";position:absolute;inset:35%;border-radius:50%;background:radial-gradient(circle at 30% 25%,#e3ebdc,#798a70 55%,#30392b);box-shadow:0 0 55px #b2cf9820;transition:transform 1.2s var(--ease)}
+    .orbit i{position:absolute;inset:calc(var(--i)*17px);border:1px solid #a8b79b70;border-radius:50%;transform:rotateX(50deg) rotateY(-20deg);transition:transform 1.4s var(--ease),border-radius 1.4s var(--ease);}
+    .orbit i::after{content:"";position:absolute;top:16%;left:10%;width:9px;height:9px;border-radius:50%;background:#e0ead8;box-shadow:0 0 16px #d0e5bd88}
+    .orbit-stage[data-shape="1"] .orbit{transform:rotate(65deg)}
+    .orbit-stage[data-shape="1"] .orbit i{transform:rotate(calc(var(--i)*30deg));border-radius:28%}
+    .orbit-stage[data-shape="1"] .orbit::after{transform:scale(.65)}
+    .orbit-stage[data-shape="2"] .orbit{transform:rotate(155deg)}
+    .orbit-stage[data-shape="2"] .orbit i{transform:rotate(calc(var(--i)*-22deg)) rotateY(35deg);border-radius:15%}
+    .orbit-stage[data-shape="2"] .orbit::after{transform:scale(.4)}
+    .shape-label{position:absolute;bottom:24px;font:10px monospace;letter-spacing:2px;color:#bcc9b3}
+    @supports(animation-timeline:view()){
+      @media(prefers-reduced-motion:no-preference){
+        .section-top{animation:section-drift linear both;animation-timeline:view();animation-range:entry 0% entry 100%}
+        .art .sculpture{animation:scroll-sculpture linear both;animation-timeline:view();animation-range:entry 0% exit 100%}
+        @keyframes section-drift{from{opacity:.3;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes scroll-sculpture{from{transform:translateY(25px) rotate(-38deg)}to{transform:translateY(-25px) rotate(-12deg)}}
+      }
+    }
+    @media(max-width:650px){.play-panel{grid-template-columns:1fr}.play-copy{padding:34px 29px 0}.orbit-stage{height:330px}.orbit{width:230px;height:230px}.playground{margin-top:60px}}
+    @media(prefers-reduced-motion:reduce){.reveal.waiting{filter:none}.hero::before{display:none}}
   </style>
 </head>
 <body id="top">
   <a class="skip" href="#main">Skip to content</a>
   <div class="progress" aria-hidden="true"></div>
   <header class="wrap nav">
-    <a class="brand" href="#top" aria-label="Alexander LaBarre home">Alexander LaBarre<span>.</span></a>
+    <a class="brand" href="#top" aria-label="Alexander LaBarre home">Alexander LaBarre</a>
     <nav class="nav-links" aria-label="Main navigation"><a href="#about">About</a><a href="#elsewhere">Elsewhere <span aria-hidden="true">↗</span></a></nav>
   </header>
   <main id="main" class="wrap">
     <section class="hero" aria-labelledby="name">
       <p class="eyebrow">A personal corner of the internet</p>
-      <h1 id="name">Alexander</h1>
+      <h1 id="name"><button class="name-play" type="button" aria-label="Animate Alexander">Alexander</button></h1>
       <p class="surname">LaBarre</p>
       <p class="hero-note">A little introduction. An open-ended space.</p>
       <div class="hero-bottom"><a class="scroll-link" href="#about"><span class="circle" aria-hidden="true">↓</span> SCROLL TO EXPLORE</a><span><i class="small-dot" aria-hidden="true"></i>PERSONAL WEBSITE</span></div>
@@ -119,6 +161,13 @@
     <section id="elsewhere" class="panel outro reveal" aria-labelledby="outro-title">
       <div><p class="eyebrow">02 / Keep exploring</p><h2 id="outro-title">See you around<br>the internet.</h2></div>
       <a class="button" href="https://github.com/Alexander-LaBarre">Visit GitHub <span aria-hidden="true">↗</span></a>
+    </section>
+    <section class="playground" id="playground" aria-labelledby="play-title">
+      <div class="section-top"><span>03 / A little playground</span><span>Just for the fun of it</span></div>
+      <div class="panel play-panel reveal">
+        <div class="play-copy"><p class="eyebrow">Take a moment. Try something.</p><h2 id="play-title">A different<br>perspective.</h2><p class="copy">A small experiment in shape and motion. Give it a spin and see where it lands.</p><button class="button" id="reshape" type="button">Change the perspective <span aria-hidden="true">↻</span></button></div>
+        <div class="orbit-stage" data-shape="0"><div class="orbit" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i></div><span class="shape-label" role="status" aria-live="polite">01 — ORBIT</span></div>
+      </div>
     </section>
   </main>
   <footer class="wrap"><span>© <span id="year">2026</span> Alexander LaBarre</span><span>Made to be a little more personal.</span><a href="#top">Back to top ↑</a></footer>
@@ -152,6 +201,36 @@
     }, { passive: true });
     window.addEventListener('resize', updateProgress);
     updateProgress();
+
+    const hero = document.querySelector('.hero');
+    const namePlay = document.querySelector('.name-play');
+    namePlay.innerHTML = [...'Alexander'].map((letter, i) => '<span aria-hidden="true" style="--i:' + i + '">' + letter + '</span>').join('');
+    let waveTimer;
+    namePlay.addEventListener('click', () => {
+      if (reducedMotion.matches) return;
+      namePlay.classList.remove('pop');
+      void namePlay.offsetWidth;
+      namePlay.classList.add('pop');
+      clearTimeout(waveTimer);
+      waveTimer = setTimeout(() => namePlay.classList.remove('pop'), 1300);
+    });
+    let pointerFrame = 0;
+    hero.addEventListener('pointermove', event => {
+      if (reducedMotion.matches || event.pointerType !== 'mouse') return;
+      if (pointerFrame) cancelAnimationFrame(pointerFrame);
+      pointerFrame = requestAnimationFrame(() => {
+        const rect = hero.getBoundingClientRect();
+        hero.style.setProperty('--mx', (event.clientX - rect.left) + 'px');
+        hero.style.setProperty('--my', (event.clientY - rect.top) + 'px');
+        pointerFrame = 0;
+      });
+    }, {passive:true});
+    let shape = 0;
+    document.getElementById('reshape').addEventListener('click', () => {
+      shape = (shape + 1) % 3;
+      document.querySelector('.orbit-stage').dataset.shape = shape;
+      document.querySelector('.shape-label').textContent = ['01 — ORBIT','02 — BLOOM','03 — SHIFT'][shape];
+    });
   </script>
 </body>
 </html>
