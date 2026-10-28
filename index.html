@@ -125,6 +125,30 @@
     .panel.motion-ready:focus-within{opacity:1;--reveal-y:0px!important}
     .grid .reveal:nth-child(2){transition-delay:0s}
     @media(prefers-reduced-motion:reduce){.panel.motion-ready{opacity:1!important;transform:none!important;filter:none!important}}
+
+    .nav{position:relative;z-index:30}
+    .settings{position:relative;font-size:13px}
+    .settings summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;color:#c7c7c7;user-select:none}
+    .settings summary::-webkit-details-marker{display:none}
+    .settings summary:focus-visible{outline:2px solid white;outline-offset:5px;border-radius:8px}
+    .gear{transition:transform .65s var(--ease)}
+    .settings summary:hover .gear{transform:rotate(25deg)}
+    .settings[open] .gear{transform:rotate(135deg)}
+    .settings-menu{position:absolute;left:0;top:calc(100% + 13px);width:min(310px,calc(100vw - 40px));padding:24px;background:#272727f7;border:1px solid #ffffff1f;border-radius:22px;box-shadow:0 24px 70px #0007;backdrop-filter:blur(18px);transform-origin:top left;animation:settings-open .35s var(--ease)}
+    @keyframes settings-open{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:none}}
+    .settings-menu .eyebrow{font-size:9px;margin-bottom:18px;color:#aaa}
+    .settings fieldset{padding:0;margin:0;border:0}
+    .settings legend{font-size:19px;font-weight:600;margin-bottom:14px;letter-spacing:-.5px}
+    .settings label{display:flex;align-items:center;gap:13px;padding:11px 10px;border-radius:11px;cursor:pointer;transition:background .2s}
+    .settings label:hover,.settings label:has(input:checked){background:#ffffff0c}
+    .settings input{accent-color:#ddd;width:16px;height:16px;margin:0}
+    .settings small{display:block;font-size:11px;color:#aaa;margin-top:4px}
+    .settings-note{font-size:10px;line-height:1.7;color:#aaa;margin:18px 0 0}
+    @supports(interpolate-size:allow-keywords){
+      .settings{interpolate-size:allow-keywords}
+      .settings::details-content{transition:content-visibility .3s allow-discrete,opacity .3s;opacity:0}
+      .settings[open]::details-content{opacity:1}
+    }
   </style>
 </head>
 <body id="top">
@@ -132,7 +156,15 @@
   <a class="skip" href="#main">Skip to content</a>
   <div class="progress" aria-hidden="true"></div>
   <header class="wrap nav">
-    <a class="brand" href="#top" aria-label="Alexander LaBarre home">Alexander LaBarre</a>
+    <details class="settings" id="settings">
+      <summary aria-label="Background settings"><svg class="gear" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 3 1-2h4l1 2 2 1 2-.2 2 3-1.2 2v3l1.2 2-2 3-2-.2-2 1-1 2h-4l-1-2-2-1-2 .2-2-3 1.2-2v-3L3 7l2-3 2 .2Z" transform="translate(0 1)"/><circle cx="12" cy="11.5" r="3.2"/></svg><span>Settings</span></summary>
+      <div class="settings-menu"><p class="eyebrow">Make yourself at home</p><fieldset><legend>Background</legend>
+        <label><input type="radio" name="background" value="dots" checked><span>Dots<small>A quiet, responsive field</small></span></label>
+        <label><input type="radio" name="background" value="network"><span>Network<small>Connected points in space</small></span></label>
+        <label><input type="radio" name="background" value="topology"><span>Topology<small>Flowing contour lines</small></span></label>
+        <label><input type="radio" name="background" value="waves"><span>Waves<small>A sculpted geometric surface</small></span></label>
+      </fieldset><p class="settings-note">Grayscale. A little motion. Your choice stays here.</p></div>
+    </details>
     <nav class="nav-links" aria-label="Main navigation"><a href="#about">About</a><a href="#elsewhere">Elsewhere <span aria-hidden="true">↗</span></a></nav>
   </header>
   <main id="main" class="wrap">
@@ -231,10 +263,10 @@
       panels.forEach(panel => {
         const top = layoutTop(panel) - window.scrollY;
         const bottom = top + panel.offsetHeight;
-        const fadeDistance = Math.min(150, viewport * .2);
+        const fadeDistance = Math.min(300, viewport * .38);
         const amount = reducedMotion.matches ? 1 : Math.max(0, Math.min(1, (viewport - 25 - top) / fadeDistance, (bottom - 25) / fadeDistance));
-        panel.style.setProperty('--visibility', amount.toFixed(3));
-        panel.style.setProperty('--reveal-y', ((1 - amount) * (top > viewport / 2 ? 28 : -28)).toFixed(2) + 'px');
+        panel.style.setProperty('--visibility', (amount * amount).toFixed(3));
+        panel.style.setProperty('--reveal-y', ((1 - amount) * (top > viewport / 2 ? 80 : -80)).toFixed(2) + 'px');
       });
     }
     function scheduleReveals() {
@@ -243,36 +275,39 @@
     panels.forEach(panel => {
       panel.classList.remove('waiting');
       panel.classList.add('motion-ready');
-      let tiltFrame = 0;
-      let bounds;
+      let tiltFrame = 0, mouseX = 0, mouseY = 0, tracking = false;
       function resetTilt() {
         if (tiltFrame) cancelAnimationFrame(tiltFrame);
-        tiltFrame = 0;
+        tiltFrame = 0; tracking = false;
         panel.classList.remove('is-tilting');
-        panel.style.setProperty('--tilt-x', '0deg');
-        panel.style.setProperty('--tilt-y', '0deg');
-        bounds = null;
+        panel.style.setProperty('--tilt-x','0deg');
+        panel.style.setProperty('--tilt-y','0deg');
       }
-      panel.addEventListener('pointerenter', event => {
-        if (event.pointerType !== 'mouse' || !finePointer.matches || reducedMotion.matches) return;
-        bounds = panel.getBoundingClientRect();
+      function updateTilt() {
+        tiltFrame = 0;
+        if (!tracking || reducedMotion.matches || !finePointer.matches) {resetTilt(); return;}
+        let left = 0;
+        for (let node = panel; node; node = node.offsetParent) left += node.offsetLeft;
+        const top = layoutTop(panel) - window.scrollY;
+        left -= window.scrollX;
+        const x = Math.max(-1,Math.min(1,(mouseX-left)/panel.offsetWidth*2-1));
+        const y = Math.max(-1,Math.min(1,(mouseY-top)/panel.offsetHeight*2-1));
         panel.classList.add('is-tilting');
-      });
-      panel.addEventListener('pointermove', event => {
-        if (!bounds || reducedMotion.matches) return;
-        const x = Math.max(-1, Math.min(1, (event.clientX - bounds.left) / bounds.width * 2 - 1));
-        const y = Math.max(-1, Math.min(1, (event.clientY - bounds.top) / bounds.height * 2 - 1));
-        if (tiltFrame) cancelAnimationFrame(tiltFrame);
-        tiltFrame = requestAnimationFrame(() => {
-          panel.style.setProperty('--tilt-x', (-y * 2.2).toFixed(2) + 'deg');
-          panel.style.setProperty('--tilt-y', (x * 2.8).toFixed(2) + 'deg');
-          tiltFrame = 0;
-        });
-      }, {passive:true});
-      panel.addEventListener('pointerleave', resetTilt);
-      panel.addEventListener('pointercancel', resetTilt);
-      window.addEventListener('scroll', resetTilt, {passive:true});
-      reducedMotion.addEventListener('change', resetTilt);
+        panel.style.setProperty('--tilt-x',(-y*2.2).toFixed(2)+'deg');
+        panel.style.setProperty('--tilt-y',(x*2.8).toFixed(2)+'deg');
+      }
+      function track(event) {
+        if (event.pointerType !== 'mouse' || reducedMotion.matches || !finePointer.matches) return;
+        tracking = true; mouseX=event.clientX; mouseY=event.clientY;
+        if (!tiltFrame) tiltFrame=requestAnimationFrame(updateTilt);
+      }
+      panel.addEventListener('pointerenter',track);
+      panel.addEventListener('pointermove',track,{passive:true});
+      panel.addEventListener('pointerleave',resetTilt);
+      panel.addEventListener('pointercancel',resetTilt);
+      window.addEventListener('scroll',() => {if(tracking && !tiltFrame) tiltFrame=requestAnimationFrame(updateTilt);},{passive:true});
+      window.addEventListener('blur',resetTilt);
+      reducedMotion.addEventListener('change',resetTilt);
     });
     window.addEventListener('scroll', scheduleReveals, {passive:true});
     window.addEventListener('resize', scheduleReveals);
@@ -280,74 +315,113 @@
     if ('ResizeObserver' in window) new ResizeObserver(scheduleReveals).observe(document.body);
     paintReveals();
 
-    // A faint field of dots gently parts around the mouse, then settles back.
-    // Rendering sleeps when settled or hidden; it never intercepts clicks.
+    // Four original grayscale backgrounds, rendered without external libraries.
+    const settings = document.getElementById('settings');
+    const choices = [...document.querySelectorAll('input[name="background"]')];
+    let background = 'dots';
+    try {const saved=localStorage.getItem('alexander-background');if(choices.some(input=>input.value===saved)) background=saved;} catch (_) {}
+    choices.forEach(input=>{input.checked=input.value===background;});
+    document.addEventListener('pointerdown',event=>{if(!settings.contains(event.target)) settings.open=false;});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape' && settings.open){settings.open=false;settings.querySelector('summary').focus();}});
     const canvas = document.getElementById('ambient-pattern');
     const context = canvas.getContext('2d');
     if (context) {
-      let points = [], width = 0, height = 0, frame = 0, previousTime = 0;
-      const pointer = {x: -1000, y: -1000, active:false};
-      function wake() {
-        if (!frame && !document.hidden) frame = requestAnimationFrame(drawPattern);
-      }
-      function resizePattern() {
-        width = document.documentElement.clientWidth;
-        height = window.innerHeight;
-        const ratio = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.round(width * ratio);
-        canvas.height = Math.round(height * ratio);
-        context.setTransform(ratio, 0, 0, ratio, 0, 0);
-        points = [];
-        for (let y = 18, row = 0; y < height + 35; y += 36, row++) {
-          for (let x = 18 + (row % 2) * 18; x < width + 35; x += 36) points.push({x,y,dx:0,dy:0});
-        }
+      let points=[], width=0,height=0,frame=0,previousTime=0;
+      const mouse={x:-1000,y:-1000,active:false};
+      const influence={x:-1000,y:-1000,power:0};
+      function wake(){if(!frame && !document.hidden) frame=requestAnimationFrame(draw);}
+      function seed(n){const a=Math.sin(n*127.1+311.7)*43758.5453;return a-Math.floor(a);}
+      function resize(){
+        width=document.documentElement.clientWidth;height=window.innerHeight;
+        const ratio=Math.min(window.devicePixelRatio||1,2);
+        canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
+        context.setTransform(ratio,0,0,ratio,0,0);points=[];
+        const spacing=background==='network'?100:36;
+        let index=0;
+        for(let y=18;y<height+spacing;y+=spacing){for(let x=18;x<width+spacing;x+=spacing){
+          const jitter=background==='network'?70:0;
+          points.push({x:x+(seed(index++)-.5)*jitter,y:y+(seed(index++)-.5)*jitter});
+        }}
         wake();
       }
-      function drawPattern(time) {
-        frame = 0;
-        const dt = previousTime ? Math.min(40, time - previousTime) : 16;
-        previousTime = time;
-        const easing = 1 - Math.exp(-dt / 95);
-        let moving = false;
-        context.clearRect(0,0,width,height);
-        context.fillStyle = 'rgba(189,204,180,0.13)';
-        context.beginPath();
-        points.forEach(point => {
-          let targetX = 0, targetY = 0;
-          if (pointer.active && !reducedMotion.matches && finePointer.matches) {
-            const dx = point.x - pointer.x, dy = point.y - pointer.y;
-            const distance = Math.hypot(dx,dy);
-            if (distance < 125) {
-              const force = Math.pow(1 - distance / 125, 2) * 23;
-              targetX = dx / (distance || 1) * force;
-              targetY = dy / (distance || 1) * force;
-            }
-          }
-          point.dx += (targetX - point.dx) * easing;
-          point.dy += (targetY - point.dy) * easing;
-          if (Math.abs(targetX - point.dx) + Math.abs(targetY - point.dy) > .025) moving = true;
-          const x = point.x + point.dx, y = point.y + point.dy;
-          context.moveTo(x + .7, y);
-          context.arc(x,y,.7,0,Math.PI*2);
-        });
-        context.fill();
-        if (moving) wake(); else previousTime = 0;
+      function displace(x,y,strength=32){
+        const dx=x-influence.x,dy=y-influence.y,d=Math.hypot(dx,dy),radius=185;
+        const force=Math.pow(Math.max(0,1-d/radius),2)*strength*influence.power;
+        return {x:x+dx/(d||1)*force,y:y+dy/(d||1)*force};
       }
-      window.addEventListener('pointermove', event => {
-        if (event.pointerType !== 'mouse' || reducedMotion.matches || !finePointer.matches) return;
-        pointer.x = event.clientX; pointer.y = event.clientY; pointer.active = true; wake();
-      }, {passive:true});
-      function settle() {pointer.active = false; wake();}
+      function drawDots(){
+        context.fillStyle='rgba(205,205,205,.23)';context.beginPath();
+        points.forEach(p=>{const q=displace(p.x,p.y);context.moveTo(q.x+.85,q.y);context.arc(q.x,q.y,.85,0,Math.PI*2);});context.fill();
+      }
+      function drawNetwork(){
+        const nodes=points.map(p=>displace(p.x,p.y,42));context.lineWidth=.7;
+        for(let i=0;i<nodes.length;i++){
+          const a=nodes[i];
+          for(let j=i+1;j<nodes.length;j++){
+            const b=nodes[j],distance=Math.hypot(a.x-b.x,a.y-b.y);
+            if(distance<155){context.strokeStyle='rgba(195,195,195,'+(.18*(1-distance/155)).toFixed(3)+')';context.beginPath();context.moveTo(a.x,a.y);context.lineTo(b.x,b.y);context.stroke();}
+          }
+          context.fillStyle='rgba(210,210,210,.3)';context.beginPath();context.arc(a.x,a.y,1.25,0,Math.PI*2);context.fill();
+        }
+      }
+      function drawTopology(){
+        context.lineWidth=.65;
+        for(let line=-10;line<Math.ceil(height/12)+12;line++){
+          context.strokeStyle=line%5===0?'rgba(190,190,190,.17)':'rgba(170,170,170,.085)';context.beginPath();
+          for(let x=-25;x<width+30;x+=14){
+            const y=line*12+Math.sin(x*.004+line*.055)*65+Math.sin(x*.008-line*.035)*24;
+            const q=displace(x,y,46);if(x===-25)context.moveTo(q.x,q.y);else context.lineTo(q.x,q.y);
+          }context.stroke();
+        }
+      }
+      function drawWaves(){
+        const step=75,cols=Math.ceil(width/step)+2,rows=Math.ceil(height/step)+2;
+        function vertex(col,row){
+          const x=col*step-40+(row%2)*step*.45;
+          const base=row*step-50;
+          const z=Math.sin(col*.65+row*.42)*16+Math.cos(col*.32-row*.7)*12;
+          const q=displace(x,base+z,45);return {x:q.x,y:q.y,z:z+(q.y-base-z)*.8};
+        }
+        function triangle(a,b,c){
+          const shade=Math.round(29+Math.max(0,Math.min(1,.5+(a.z+b.z+c.z)/110))*15);
+          context.fillStyle='rgb('+shade+','+shade+','+shade+')';context.beginPath();context.moveTo(a.x,a.y);context.lineTo(b.x,b.y);context.lineTo(c.x,c.y);context.closePath();context.fill();
+        }
+        for(let row=0;row<rows;row++){for(let col=0;col<cols;col++){
+          const a=vertex(col,row),b=vertex(col+1,row),c=vertex(col,row+1),d=vertex(col+1,row+1);
+          triangle(a,b,c);triangle(b,d,c);
+        }}
+      }
+      function draw(time){
+        frame=0;const dt=previousTime?Math.min(40,time-previousTime):16;previousTime=time;
+        const easing=1-Math.exp(-dt/100);
+        const enabled=mouse.active && !reducedMotion.matches && finePointer.matches;
+        const target=enabled?1:0;
+        if(enabled){
+          if(influence.power<.005){influence.x=mouse.x;influence.y=mouse.y;}
+          influence.x+=(mouse.x-influence.x)*easing;influence.y+=(mouse.y-influence.y)*easing;
+        }
+        influence.power+=(target-influence.power)*easing;
+        context.clearRect(0,0,width,height);
+        if(background==='network')drawNetwork();else if(background==='topology')drawTopology();else if(background==='waves')drawWaves();else drawDots();
+        const moving=Math.abs(target-influence.power)>.002 || (enabled && Math.abs(mouse.x-influence.x)+Math.abs(mouse.y-influence.y)>.1);
+        if(moving)wake();else previousTime=0;
+      }
+      choices.forEach(input=>input.addEventListener('change',()=>{
+        if(!input.checked)return;background=input.value;
+        try{localStorage.setItem('alexander-background',background);}catch(_){}
+        resize();
+      }));
+      window.addEventListener('pointermove',event=>{
+        if(event.pointerType!=='mouse'||reducedMotion.matches||!finePointer.matches)return;
+        mouse.x=event.clientX;mouse.y=event.clientY;mouse.active=true;wake();
+      },{passive:true});
+      function settle(){mouse.active=false;wake();}
       document.documentElement.addEventListener('pointerleave',settle);
-      window.addEventListener('blur',settle);
-      window.addEventListener('resize',resizePattern);
-      reducedMotion.addEventListener('change', () => { pointer.active=false; points.forEach(point => {point.dx=0;point.dy=0;}); wake(); });
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {cancelAnimationFrame(frame);frame=0;previousTime=0;pointer.active=false;} else wake();
-      });
-      resizePattern();
+      window.addEventListener('blur',settle);window.addEventListener('resize',resize);
+      reducedMotion.addEventListener('change',()=>{mouse.active=false;influence.power=0;wake();});
+      document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;previousTime=0;mouse.active=false;}else wake();});
+      resize();
     }
   </script>
 </body>
 </html>
-
